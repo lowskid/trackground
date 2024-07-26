@@ -6,3 +6,4 @@ A simple dynamic wallpaper based on your currently playing music written in Rust
 - Nothing.
 
 ### Installation
+Coming soon?
