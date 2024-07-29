@@ -1,4 +1,4 @@
-use magick_rust::{MagickWand, magick_wand_genesis};
+use magick_rust::{MagickWand, magick_wand_genesis, PixelWand, bindings};
 use mpris::{PlayerFinder, Metadata};
 use std::sync::Once;
 
@@ -26,7 +26,11 @@ fn main() {
                 println!("{}", coverurl);
 
                 let mut response = get(coverurl).expect("Failed to download image");
-                let mut file = File::create("temp").expect("Failed to create file");
+                let mut file = File::create("bg").expect("Failed to create file");
+                copy(&mut response, &mut file).expect("Failed to save image");
+                                let mut response = get(coverurl).expect("Failed to download image");
+
+                let mut file = File::create("fg").expect("Failed to create file");
                 copy(&mut response, &mut file).expect("Failed to save image");
 
                 let tempurl = coverurl;
@@ -47,23 +51,57 @@ fn blur() {
 
     let wand = MagickWand::new();
 
-    wand.read_image("temp").unwrap();
+    wand.read_image("bg").unwrap();
 
     let sigma = 5.0;
     wand.gaussian_blur_image(0.0, sigma).unwrap();
+   
+    wand.write_image("bg").unwrap();
 
-    wand.write_image("temp").unwrap();
-
-        let amount_str = "40";
+    let amount_str = "40";
     Command::new("convert")
-        .arg("temp")
+        .arg("bg")
         .arg("-fill")
         .arg("black")
         .arg("-colorize")
         .arg(&amount_str)
-        .arg("temp")
+        .arg("-resize")
+        .arg("1900x1900")
+        .arg("bg")
+        .output()
+        .expect("Failed to execute ImageMagick command");
+    
+    // Command::new("magick")
+    //     .arg("fg")
+    //     .arg("-background")
+    //     .arg("none")
+    //     .arg("-shadow")
+    //     .arg("30x5+5+5")
+    //     .arg("shadow.png")
+    //     .output();
+    //
+    // Command::new("magick")
+    //     .arg("shadow.png")
+    //     .arg("fg")
+    //     .arg("-compose")
+    //     .arg("over")
+    //     .arg("-composite")
+    //     .arg("fg.png")
+    //     .output();
+
+    Command::new("convert")
+        .arg("bg")
+        .arg("fg")
+        .arg("-gravity")
+        .arg("Center")
+        .arg("-geometry")
+        .arg("300x300+0+0")
+        .arg("-composite")
+        .arg("tg")
         .output()
         .expect("Failed to execute ImageMagick command");
 
-        wallpaper::set_from_path("temp");
+        wallpaper::set_from_path("tg");
+
+
 }
