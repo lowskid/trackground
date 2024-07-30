@@ -1,7 +1,8 @@
 use magick_rust::{MagickWand, magick_wand_genesis, PixelWand, bindings};
-use mpris::{PlayerFinder, Metadata};
+use mpris::{PlayerFinder, Metadata, PlayerEvents};
 use std::sync::Once;
 
+use std::time::{Duration, Instant};
 use std::process::Command;
 
 use wallpaper;
@@ -11,36 +12,39 @@ use std::io::copy;
 use reqwest::blocking::get;
 
 fn main() {
-    let tempurl = "nil";
-    while true {
-        let player = PlayerFinder::new()
+    let finder = PlayerFinder::new().unwrap();
+    let player = finder.find_active().unwrap();
+
+    for event in player.events().unwrap() {
+        println!("Got event: {:?}", event);
+        cover();
+    }
+}
+
+fn cover() {
+    let player = PlayerFinder::new()
         .expect("Couldn't connect to D-Bus.")
         .find_active()
         .expect("Couldn't find a player.");
-
-        let metadata = player.get_metadata();
+    let metadata = player.get_metadata();
 
         if let Some(coverurl) = metadata.expect("yep").art_url() {
         
-            if tempurl != coverurl {
-                println!("{}", coverurl);
+            println!("{}", coverurl);
 
-                let mut response = get(coverurl).expect("Failed to download image");
-                let mut file = File::create("bg").expect("Failed to create file");
-                copy(&mut response, &mut file).expect("Failed to save image");
-                                let mut response = get(coverurl).expect("Failed to download image");
+            let mut response = get(coverurl).expect("Failed to download image");
+            let mut file = File::create("bg").expect("Failed to create file");
+            copy(&mut response, &mut file).expect("Failed to save image");
+            let mut response = get(coverurl).expect("Failed to download image");
+            let mut file = File::create("fg").expect("Failed to create file");
+            copy(&mut response, &mut file).expect("Failed to save image");
 
-                let mut file = File::create("fg").expect("Failed to create file");
-                copy(&mut response, &mut file).expect("Failed to save image");
+            blur()
 
-                let tempurl = coverurl;
-
-                blur()
-            }
         } else {
             println!("No URL found...");
+            wallpaper::set_from_path("~/.config/bspwm/wallpapers/pawel-czerwinski-8pl6-skzWYI-unsplash.png");
         }
-    }
 }
 
 fn blur() {
